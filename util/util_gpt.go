@@ -54,7 +54,7 @@ func (c *GPTClient) SendMessage(ctx context.Context, prompt string) (string, err
 			//{Role: "system", Content: "You are a helpful assistant that provides Go code execution."},
 			{Role: "user", Content: prompt},
 		},
-		MaxTokens: 10240,
+		MaxTokens: 25000,
 	}
 
 	// Convert request to JSON

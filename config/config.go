@@ -8,12 +8,13 @@ import (
 )
 
 type Config struct {
-	GptApiKey string `yaml:"gpt_api_key"`
-	Port      int    `yaml:"port"`
+	GptApiKey     string `yaml:"gpt_api_key"`
+	Port          int    `yaml:"port"`
+	ExecuterStore string `yaml:"executer_store"`
 }
 
 func LoadConfig(filePath string) (*Config, error) {
-	config := &Config{}
+	config := new(Config)
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, err

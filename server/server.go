@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gcottom/aegisx/config"
-	"github.com/gcottom/aegisx/dynamicroutes"
 	"github.com/gcottom/aegisx/handlers"
-	"github.com/gcottom/aegisx/services"
+	"github.com/gcottom/aegisx/routes"
+	"github.com/gcottom/aegisx/services/executer"
 	"github.com/gcottom/aegisx/util"
 	"github.com/gcottom/qgin/qgin"
 	"gopkg.in/tylerb/graceful.v1"
@@ -35,19 +35,20 @@ func Run() error {
 		return errors.New("failed to create GPT client")
 	}
 	log.Println("GPT client created successfully")
-	executorService := &services.ExecuterService{
+	executorService := &executer.ExecuterService{
 		GPTClient:  gptClient,
-		RetryLimit: 5,
+		RetryLimit: 3,
+		Config:     cfg,
 	}
 	log.Println("Creating executor service")
 	router := qgin.NewGinEngine(&ctx, &qgin.Config{LogRequestID: true, ProdMode: true})
 	mainHandler := &handlers.MainHandler{
 		ExecutorService: executorService,
 	}
-	routerSwitcher := util.NewRouterSwitcher(router)
-	dynamicroutes.CreateRoutes(router, mainHandler)
+	routerSwitcher := routes.NewRouterSwitcher(router)
+	routes.CreateRoutes(router, mainHandler)
 	log.Println("Creating routes")
-	dynamicRouteService := &dynamicroutes.DynamicRouteService{
+	dynamicRouteService := &routes.DynamicRouteService{
 		Handler:        mainHandler,
 		Router:         router,
 		RouterSwitcher: routerSwitcher,
@@ -60,7 +61,7 @@ func Run() error {
 
 }
 
-func CreateGracefulServer(router *util.RouterSwitcher, port int) *graceful.Server {
+func CreateGracefulServer(router *routes.RouterSwitcher, port int) *graceful.Server {
 	return &graceful.Server{
 		Server: &http.Server{
 			Addr:         ":" + strconv.Itoa(port),

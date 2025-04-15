@@ -2,6 +2,10 @@ package util
 
 import (
 	"fmt"
+	"go/parser"
+	"go/token"
+	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,19 +79,22 @@ func GetAppRoot() string {
 
 // ExtractImports parses Go code and returns a list of imported packages.
 func ExtractImports(code string) []string {
-	imports := []string{}
-	// Regex to match import statements
-	importRegex := regexp.MustCompile(`import\s+\(?\s*"(.*?)"`)
-	matches := importRegex.FindAllStringSubmatch(code, -1)
+	fset := token.NewFileSet()
 
-	for _, match := range matches {
-		if len(match) > 1 {
-			packageName := match[1]
-			if !IsStandardPackage(packageName) {
-				imports = append(imports, packageName)
-			}
+	// Parse the code into an AST
+	node, err := parser.ParseFile(fset, "", code, parser.ImportsOnly)
+	if err != nil {
+		return []string{}
+	}
+
+	var imports []string
+	for _, imp := range node.Imports {
+		packageName := strings.Trim(imp.Path.Value, `"`)
+		if !IsStandardPackage(packageName) {
+			imports = append(imports, packageName)
 		}
 	}
+
 	return imports
 }
 
@@ -159,4 +166,24 @@ func DownloadPackage(pkg, targetDir string) error {
 	}
 
 	return nil
+}
+
+func RuntimeHealthCheck(runtimeID string) bool {
+	log.Println("Performing health check for runtime:", runtimeID)
+	res, err := http.Get(fmt.Sprintf("http://localhost:8080/runtime/%s", runtimeID))
+	if err != nil {
+		return false
+	}
+	defer res.Body.Close()
+	return res.StatusCode == http.StatusOK
+}
+
+// RemoveItem removes the first occurrence of an item from a slice of strings.
+func RemoveItem(slice []string, item string) []string {
+	for i, v := range slice {
+		if v == item {
+			return append(slice[:i], slice[i+1:]...)
+		}
+	}
+	return slice
 }

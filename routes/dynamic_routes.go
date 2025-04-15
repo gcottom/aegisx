@@ -1,4 +1,4 @@
-package dynamicroutes
+package routes
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/gcottom/aegisx/util"
 	"github.com/gcottom/qgin/qgin"
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +16,7 @@ import (
 type DynamicRouteService struct {
 	Handler        Handlers
 	Router         *gin.Engine
-	RouterSwitcher *util.RouterSwitcher
+	RouterSwitcher *RouterSwitcher
 	ProxyMap       sync.Map
 }
 
@@ -34,6 +33,7 @@ func CreateRoutes(router *gin.Engine, handler Handlers) {
 }
 
 func (s *DynamicRouteService) RegisterReverseProxy(runtimeID string, port int) {
+	s.DeregisterReverseProxy(runtimeID) // Deregister if already exists
 	targetURL, _ := url.Parse("http://localhost:" + strconv.Itoa(port))
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
